@@ -44,18 +44,23 @@ class Query(Logic):
 class Condition(Logic):
     def _get_action_by_value(self, value):
         if isinstance(value, str):
-            return 'LIKE'
+            return 'LIKE ?'
         if hasattr(value, '__iter__'):
-            return 'IN'
-        return '='
+            return 'IN (?)'
+        return '=?'
 
     def __init__(self, field, value, action=None):
         self.field = field
-        self.value = value
+        self.value = ', '.join(value) if hasattr(value, '__iter__') and not isinstance(value, str) else value
         self.action = action
         if self.action is None:
             self.action = self._get_action_by_value(self.value)
+        else:
+            self.action += ' (?)'
 
     def sql(self, fields_map=None):
-        return self.field + ' ' + self.action + ' (?)', [self.value]
+        field = self.field
+        if fields_map:
+            field = fields_map.get(self.field, self.field)
+        return field + ' ' + self.action, [self.value]
 

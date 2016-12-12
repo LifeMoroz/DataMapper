@@ -1,1 +1,0 @@
-DBNAME = '../example.db'

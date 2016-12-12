@@ -1,6 +1,6 @@
 import sqlite3
 
-from settings import DBNAME
+from example_db.settings import DBNAME
 
 
 class DataWrapper:
@@ -13,7 +13,6 @@ class DataWrapper:
         sql = sql.format(unescape) if unescape else sql
         try:
             if params:
-                print(sql)
                 return self.cursor.execute(sql, params)
             else:
                 return self.cursor.execute(sql)

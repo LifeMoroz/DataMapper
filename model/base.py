@@ -31,6 +31,13 @@ class BaseMapper:
             table_name=self.get_table_name(), fields=fields, values=values)
         return sql
 
+    def _replace(self):
+        fields = ', '.join(self.fields.values())
+        values = ':' + ', :'.join(self.fields.values())
+        sql = "REPLACE INTO {table_name} ({fields}) VALUES ({values})".format(
+            table_name=self.get_table_name(), fields=fields, values=values)
+        return sql
+
     def _select(self, condition):
         where_sql, where_params = condition.sql(self.fields)
         fields = ', '.join(self.fields.values())
@@ -38,32 +45,28 @@ class BaseMapper:
             fields=fields, table_name=self.get_table_name(), where=where_sql)
         return sql, where_params
 
+    def _delete(self, condition):
+        where_sql, where_params = condition.sql(self.fields)
+        sql = "DELETE FROM {table_name} WHERE {where}".format(table_name=self.get_table_name(), where=where_sql)
+        return sql, where_params
+
     def insert(self, obj):
         data = self.__validate(obj)
         sql = self._insert()
-        self.data_wrapper.execute(sql, data)
+        return self.data_wrapper.execute(sql, data).rowcount
 
     def select(self, condition):
         sql, params = self._select(condition)
         result = []
         for row in self.data_wrapper.execute(sql, params).fetchall():
-            result.append(News(*row))
+            result.append(self.model(*row))
         return result
 
-    def update(self, obj):
-        self.__validate(obj)
+    def replace(self, obj):
+        data = self.__validate(obj)
+        sql = self._replace()
+        return self.data_wrapper.execute(sql, data).rowcount
 
-    def delete(self, **params):
-        pass
-
-
-class News:
-    def __init__(self, pk, content):
-        self.pk = pk
-        self.content = content
-
-
-class NewsMapper(BaseMapper):
-    fields = {'pk': 'id', 'content': 'text'}
-    table_name = 'model_news'
-    model = News
+    def delete(self, condition):
+        sql, params = self._delete(condition)
+        return self.data_wrapper.execute(sql, params).rowcount
