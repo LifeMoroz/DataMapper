@@ -38,16 +38,23 @@ class BaseMapper:
             table_name=self.get_table_name(), fields=fields, values=values)
         return sql
 
-    def _select(self, condition):
-        where_sql, where_params = condition.sql(self.fields)
+    def _select(self, condition=None):
         fields = ', '.join(self.fields.values())
-        sql = "SELECT {fields} FROM {table_name} WHERE {where}".format(
-            fields=fields, table_name=self.get_table_name(), where=where_sql)
+        sql = "SELECT {fields} FROM {table_name}"
+        where_params, where_sql = [], None
+        if condition is not None:
+            where_sql, where_params = condition.sql(self.fields)
+            sql += " WHERE {where}"
+        sql = sql.format(fields=fields, table_name=self.get_table_name(), where=where_sql)
         return sql, where_params
 
-    def _delete(self, condition):
-        where_sql, where_params = condition.sql(self.fields)
-        sql = "DELETE FROM {table_name} WHERE {where}".format(table_name=self.get_table_name(), where=where_sql)
+    def _delete(self, condition=None):
+        where_params, where_sql = [], None
+        sql = "DELETE FROM {table_name}"
+        if condition:
+            where_sql, where_params = condition.sql(self.fields)
+            sql += " WHERE {where}"
+        sql = sql.format(table_name=self.get_table_name(), where=where_sql)
         return sql, where_params
 
     def insert(self, obj):
@@ -55,16 +62,17 @@ class BaseMapper:
         sql = self._insert()
         return self.data_wrapper.execute(sql, data).rowcount
 
-    def select(self, condition):
+    def select(self, condition=None):
         sql, params = self._select(condition)
         result = []
         for row in self.data_wrapper.execute(sql, params).fetchall():
             result.append(self.model(*row))
         return result
 
-    def replace(self, obj):
+    def update(self, obj):
         data = self.__validate(obj)
         sql = self._replace()
+        print(sql, data)
         return self.data_wrapper.execute(sql, data).rowcount
 
     def delete(self, condition):
