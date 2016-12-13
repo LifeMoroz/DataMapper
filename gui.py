@@ -8,7 +8,9 @@ class GUI:
         self.root = self._create_root()
         self.info_frame = self._create_info_frame()
         self.work_frame = self._create_work_frame()
-        self.pc_selected = tkinter.StringVar(self.info_frame)
+        self.selected_pc = tkinter.StringVar(self.info_frame)
+        self.selected_adapter = tkinter.StringVar(self.info_frame)
+        self._adapters_select = None
 
     def _create_root(self):
         root = tkinter.Tk()
@@ -27,27 +29,116 @@ class GUI:
         work_frame.place(width=self.width, height=300, y=self.height-300)
         return work_frame
 
-    def fill_info(self, choices, select_pc_callback, choose=None):
-        var = self.pc_selected
+    def fill_info(self, choices, select_pc_callback, edit_pc_callback, ping_pc_callback, new_pc_callback, choose=None):
+        var = self.selected_pc
         label = tkinter.Label(self.info_frame, text="Выберите действие")
         label.pack()
         var.set(choose or "Select PC")
+        var.trace('w', select_pc_callback)
+        if not choices:
+            choices = ["Select PC"]
         option = tkinter.OptionMenu(self.info_frame, var, *choices)
         width = 114
         option.place(x=self.width / 2 - width - 5, y=20, width=width)
         buttontext = tkinter.StringVar()
         buttontext.set("Edit")
-        tkinter.Button(self.info_frame, textvariable=buttontext, command=select_pc_callback).place(x=self.width / 2 + 5, y=22)
+
+        def edit():
+            edit_pc_callback(self.selected_pc.get())
+
+        tkinter.Button(self.info_frame, textvariable=buttontext, command=edit).place(x=self.width / 2 + 5, y=22)
+
+        buttontext = tkinter.StringVar()
+        buttontext.set("Ping")
+
+        def ping():
+            ping_pc_callback(self.selected_pc.get())
+
+        tkinter.Button(self.info_frame, textvariable=buttontext, command=ping).place(x=self.width / 2 + 45, y=22)
+        buttontext = tkinter.StringVar()
+
+        buttontext.set("New")
+        tkinter.Button(self.info_frame, textvariable=buttontext, command=new_pc_callback).place(x=self.width / 2 + 85, y=22)
         return var
 
-    def edit_pc(self, pc, pc_edited):
+    def add_adapters(self, choices, edit, ping, new, choose=None, pc=None):
+        var = self.selected_adapter
+        if self._adapters_select:
+            self._adapters_select.destroy()
+        var.set(choose or "Select Adapter")
+        if not choices:
+            choices = ["Select Adapter"]
+        self._adapters_select = tkinter.OptionMenu(self.info_frame, var, *choices)
+        width = 114
+        self._adapters_select.place(x=self.width / 2 - width - 5, y=60, width=width)
+        buttontext = tkinter.StringVar()
+        buttontext.set("Edit")
+
+        def callback():
+            edit(self.selected_adapter.get())
+
+        tkinter.Button(self.info_frame, textvariable=buttontext, command=callback).place(x=self.width / 2 + 5, y=62)
+        buttontext = tkinter.StringVar()
+        buttontext.set("Ping")
+
+        def callback():
+            ping(self.selected_adapter.get())
+        tkinter.Button(self.info_frame, textvariable=buttontext, command=callback).place(x=self.width / 2 + 45, y=62)
+        buttontext = tkinter.StringVar()
+        buttontext.set("New")
+
+        def callback():
+            if pc is not None:
+                new(pc)
+        tkinter.Button(self.info_frame, textvariable=buttontext, command=callback).place(x=self.width / 2 + 85, y=62)
+
+    def edit_pc(self, pc, pc_edited, pc_deleted):
+        self.clear_workspace()
+        work_frame = self.work_frame
+        label = tkinter.Label(work_frame, text="Укажите настройки")
+        label.place(y=5, x=self.width / 2 - 60)
+        p1 = tkinter.StringVar()
+        p1.set(pc.title)
+
+        # редактирование настройки №2
+        label = tkinter.Label(work_frame, text="Title:", bg='gray')
+        label.place(y=55, x=self.width / 2 - 97)
+
+        def validate_title(x):
+            if len(x) > 255:
+                return False
+            return True
+
+        isOk = work_frame.register(validate_title)
+        entry2 = tkinter.Entry(work_frame, textvariable=p1, validate='all', validatecommand=(isOk, '%P'))
+        entry2.place(y=55, x=self.width / 2 - 65)
+
+        # Отредактировали
+        buttontext = tkinter.StringVar()
+        buttontext.set("Edit")
+
+        def callback():
+            pc_edited(pc, title=entry2.get())
+
+        tkinter.Button(self.work_frame, textvariable=buttontext, command=callback).place(x=self.width / 2 - 40, y=80)
+        # Отредактировали
+        buttontext = tkinter.StringVar()
+        buttontext.set("Delete")
+
+        def callback():
+            pc_deleted(pc)
+
+        tkinter.Button(self.work_frame, textvariable=buttontext, command=callback).place(x=self.width / 2, y=80)
+
+    def edit_adapter(self, adapter, edited, deleted):
         self.clear_workspace()
         work_frame = self.work_frame
         label = tkinter.Label(work_frame, text="Укажите настройки")
         label.place(y=5, x=self.width / 2 - 60)
         ip = tkinter.StringVar()
-        ip.set(pc.ip)
+        ip.set(adapter.ip)
 
+        # редактирование IP
         label = tkinter.Label(work_frame, text="IP:", bg='gray')
         label.place(y=30, x=self.width / 2 - 85)
 
@@ -61,15 +152,26 @@ class GUI:
             return bool(match)
 
         isOk = work_frame.register(validate_ipv4)
-        entry = tkinter.Entry(work_frame, textvariable=ip, validate='all', validatecommand=(isOk, '%P'))
-        entry.place(y=30, x=self.width / 2 - 65)
+        entry1 = tkinter.Entry(work_frame, textvariable=ip, validate='all', validatecommand=(isOk, '%P'))
+        entry1.place(y=30, x=self.width / 2 - 65)
+
+        # Отредактировали
         buttontext = tkinter.StringVar()
         buttontext.set("Edit")
 
         def callback():
-            pc_edited(pc, ip=entry.get())
+            edited(adapter, ip=entry1.get(), pc=adapter.pc)
 
-        tkinter.Button(self.root, textvariable=buttontext, command=callback).place(x=self.width / 2 -20, y=50)
+        tkinter.Button(self.work_frame, textvariable=buttontext, command=callback).place(x=self.width / 2 - 40, y=80)
+        # Отредактировали
+        buttontext = tkinter.StringVar()
+        buttontext.set("Delete")
+
+        def callback():
+            deleted(adapter)
+
+        tkinter.Button(self.work_frame, textvariable=buttontext, command=callback).place(x=self.width / 2, y=80)
+
 
     def clear_workspace(self):
         self.work_frame.destroy()
@@ -78,7 +180,13 @@ class GUI:
     def clear_infospace(self):
         self.info_frame.destroy()
 
-    def update_info(self, choices, select_pc_callback, choose=None):
+    def update_info(self, choices, select_pc_callback, edit_pc_callback, ping_pc_callback, new_pc_callback, choose=None):
         self.clear_infospace()
         self.info_frame = self._create_info_frame()
-        self.fill_info(choices, select_pc_callback, choose)
+        self.fill_info(choices, select_pc_callback, edit_pc_callback, ping_pc_callback, new_pc_callback, choose)
+
+    def result(self, text):
+        self.clear_workspace()
+        label = tkinter.Label(self.work_frame, text=text)
+        label.place(y=5, x=self.width / 2 - 60)
+

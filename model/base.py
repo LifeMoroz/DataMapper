@@ -16,8 +16,9 @@ class BaseMapper:
         clean_data = {}
         for field, db_field in self.fields.items():
             value = getattr(obj, field)
-            if not (self.validators.get(field) is None or self.validators[field](value)):
-                raise ValidateError
+            if self.validators.get(field) is not None:
+                value = self.validators[field](value)
+
             clean_data[self.fields[field]] = value
         return clean_data
 
@@ -62,17 +63,23 @@ class BaseMapper:
         sql = self._insert()
         return self.data_wrapper.execute(sql, data).rowcount
 
-    def select(self, condition=None):
+    def _parse_order_by(self, order_by):
+        if order_by.startswith('-'):
+            return self.fields.get(order_by[1:], order_by[1:]) + " DESC"
+        elif order_by.startswith('+'):
+            return self.fields.get(order_by[1:], order_by[1:]) + " ASC"
+        return self.fields.get(order_by, order_by) + " ASC"
+
+    def select(self, condition=None, order_by="-id"):
         sql, params = self._select(condition)
         result = []
-        for row in self.data_wrapper.execute(sql, params).fetchall():
+        for row in self.data_wrapper.execute(sql + " ORDER BY " + self._parse_order_by(order_by), params).fetchall():
             result.append(self.model(*row))
         return result
 
     def update(self, obj):
         data = self.__validate(obj)
         sql = self._replace()
-        print(sql, data)
         return self.data_wrapper.execute(sql, data).rowcount
 
     def delete(self, condition):
