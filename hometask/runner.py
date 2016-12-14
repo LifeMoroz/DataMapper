@@ -2,8 +2,9 @@ import random
 from collections import OrderedDict
 
 from gui import GUI
-from model.base import BaseMapper
 from model.condition import Condition as C
+
+from hometask.model.base import BaseMapper
 
 
 class PC:

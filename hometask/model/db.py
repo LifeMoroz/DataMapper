@@ -1,6 +1,6 @@
 import sqlite3
 
-from example_db.settings import DBNAME
+from hometask.example_db.settings import DBNAME
 
 
 class DataWrapper:

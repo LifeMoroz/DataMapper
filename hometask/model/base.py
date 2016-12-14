@@ -1,4 +1,4 @@
-from model.db import DataWrapper
+from hometask.model.db import DataWrapper
 
 
 class ValidateError(Exception):
