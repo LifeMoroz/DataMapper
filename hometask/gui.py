@@ -5,7 +5,7 @@ from tkinter.ttk import Separator
 
 class GUI:
     def __init__(self):
-        self.width = 600
+        self.width = 800
         self.height = 480
         self.root = self._create_root()
         self.info_frame = self._create_info_frame()
