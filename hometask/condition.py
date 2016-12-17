@@ -1,3 +1,4 @@
+from datetime import datetime
 
 
 class Logic:
@@ -62,5 +63,7 @@ class Condition(Logic):
         field = self.field
         if fields_map:
             field = fields_map.get(self.field, self.field)
+        if isinstance(self.value, datetime):
+            self.value = self.value.timestamp() * 1000
         return field + ' ' + self.action, [self.value]
 
