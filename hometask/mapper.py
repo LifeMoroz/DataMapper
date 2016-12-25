@@ -4,12 +4,6 @@ from datetime import datetime
 from db.db import Database
 
 
-class PC:
-    def __init__(self, pk, title):
-        self.pk = pk
-        self.title = title
-
-
 SYSTEM_JOURNAL = (0, 'Системный журнал')
 USER_JOURNAL = (1, 'Пользовательский журнал')
 JOURNAL_CHOICES = dict([SYSTEM_JOURNAL, USER_JOURNAL])

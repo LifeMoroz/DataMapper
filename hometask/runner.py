@@ -1,5 +1,3 @@
-import random
-
 from condition import Condition as C
 from gui import GUI
 from mapper import EventMapper, TYPE_CHOICES, JOURNAL_CHOICES
